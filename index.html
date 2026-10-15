@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Битва за Колю</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      overflow: hidden;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      background: #000;
+      overflow: hidden;
+    }
+
+    #background {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 1;
+    }
+
+    #fs-btn {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      background: rgba(15, 18, 30, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      z-index: 40;
+    }
+
+    #hud {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      background: rgba(15, 18, 30, 0.85);
+      border: 1px solid rgba(255, 107, 107, 0.4);
+      padding: 4px 10px;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      backdrop-filter: blur(6px);
+      z-index: 25;
+    }
+
+    #heart-count {
+      color: #ff6b81;
+      margin-left: 4px;
+    }
+
+    #character-stage {
+      position: absolute;
+      bottom: 24dvh;
+      left: 0;
+      width: 100%;
+      height: 70dvh;
+      pointer-events: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 10%;
+      z-index: 10;
+    }
+
+    .char-sprite {
+      max-height: 100%;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+    }
+
+    #char-left {
+      transform: translateX(-4%);
+    }
+
+    #char-right {
+      transform: translateX(4%);
+    }
+
+    #dialogue-box {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 95%;
+      max-width: 850px;
+      height: 23dvh;
+      min-height: 75px;
+      background: rgba(15, 20, 32, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 6px 14px 18px 14px;
+      color: #f1f5f9;
+      backdrop-filter: blur(8px);
+      z-index: 30;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow-y: auto;
+    }
+
+    #speaker-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #dialogue-text {
+      font-size: 0.8rem;
+      line-height: 1.35;
+      color: #f8fafc;
+    }
+
+    #next-indicator {
+      position: absolute;
+      bottom: 3px;
+      right: 10px;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.35; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-2px); }
+    }
+
+    .choices-box {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .choice-btn {
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      color: #f8fafc;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      border-radius: 5px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .choice-btn:active {
+      background: #fbbf24;
+      color: #0f172a;
+    }
+
+    .modal-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 15, 25, 0.95);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 60;
+    }
+
+    .name-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+      width: 75%;
+      max-width: 340px;
+      color: #fff;
+    }
+
+    .name-card h2 {
+      color: #fbbf24;
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+    }
+
+    .name-card p {
+      color: #94a3b8;
+      font-size: 0.75rem;
+      margin-bottom: 10px;
+    }
+
+    .name-card input {
+      width: 100%;
+      padding: 6px 10px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #fff;
+      border-radius: 5px;
+      font-size: 0.85rem;
+      text-align: center;
+      outline: none;
+      margin-bottom: 10px;
+    }
+
+    .name-card button {
+      width: 100%;
+      padding: 8px;
+      background: #fbbf24;
+      border: none;
+      color: #0f172a;
+      font-size: 0.85rem;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <button id="fs-btn" onclick="toggleFullScreen()">⛶ Полный экран</button>
+    <div id="background"></div>
+
+    <div id="hud" class="hidden">
+      <span>Симпатия Коли:</span>
+      <span id="heart-count">❤️ 0</span>
+    </div>
+
+    <div id="character-stage">
+      <img id="char-left" class="char-sprite hidden" alt="">
+      <img id="char-right" class="char-sprite hidden" alt="">
+    </div>
+
+    <div id="name-screen" class="modal-screen">
+      <div class="name-card">
+        <h2>Новый студент</h2>
+        <p>Ты перевёлся в этот колледж только сегодня. Как твоё имя?</p>
+        <input type="text" id="player-name-input" placeholder="Введи имя..." maxlength="15" autocomplete="off">
+        <button id="start-btn">Начать историю</button>
+      </div>
+    </div>
+
+    <div id="dialogue-box" class="hidden">
+      <div id="speaker-name">Имя</div>
+      <div id="dialogue-text">Текст реплики...</div>
+      <div id="choices-container" class="choices-box hidden"></div>
+      <div id="next-indicator">▼ Нажми для продолжения</div>
+    </div>
+  </div>
+
+  <script>
+    let playerName = "Студент";
+    let kolyaLove = 0;
+    let currentSceneKey = "prologue_1";
+
+    const ASSETS = {
+      bg: {
+        hall: "bg_hall.png",
+        buffet: "bg_buffet.png",
+        lab: "bg_lab.png",
+        yard: "bg_yard.png",
+        busStop: "bg_bus_stop.png"
+      },
+      kolya: {
+        idle: "kolya_idle.png",
+        blush: "kolya_blush.png",
+        shock: "kolya_shock.png",
+        sad: "kolya_sad.png"
+      },
+      timofey: {
+        smug: "timofey_smug.png",
+        flirt: "timofey_flirt.png",
+        panic: "timofey_panic.png",
+        angry: "timofey_angry.png"
+      },
+      ponchik: {
+        sweet: "ponchik_sweet.png",
+        guilt: "ponchik_guilt.png",
+        shock: "ponchik_shock.png",
+        angry: "ponchik_angry.png"
+      },
+      andrey: {
+        smirk: "andrey_smirk.png",
+        angry: "andrey_angry.png",
+        shock: "andrey_shock.png",
+        defeat: "andrey_defeat.png"
+      }
+    };
+
+    const story = {
+      prologue_1: {
+        bg: ASSETS.bg.hall,
+        speaker: "Мысли",
+        text: "Первый день в новом колледже. Коридоры гудят от голосов, все спешат по аудиториям.",
+        charLeft: null,
+        charRight: null,
+        next: "prologue_2"
+      },
+      prologue_2: {
+        bg: ASSETS.bg.hall,
+        speaker: "Мысли",
+        text: "Вдруг около расписания кто-то неловко спотыкается, и пачка чертежей с грохотом разлетается по кафелю.",
+        charLeft: null,
+        charRight: ASSETS.kolya.shock,
+        next: "prologue_choice"
+      },
+      prologue_choice: {
+        bg: ASSETS.bg.hall,
+        speaker: "Коля",
+        text: "Ой... ну вот опять... простите, пожалуйста...",
+        charLeft: null,
+        charRight: ASSETS.kolya.shock,
+        choices: [
+          {
+            text: "«Давай помогу собрать, пока по ним не прошлись»",
+            score: 1,
+            next: "prologue_good"
+          },
+          {
+            text: "«Электротехника? Тоже страдаешь над схемами?»",
+            score: 0,
+            next: "prologue_neutral"
+          }
+        ]
+      },
+      prologue_good: {
+        bg: ASSETS.bg.hall,
+        speaker: "Коля",
+        text: "Спасибо тебе огромное... Я Коля. Ты здесь новенький, да? Рад знакомству!",
+        charLeft: null,
+        charRight: ASSETS.kolya.blush,
+        next: "act1_start"
+      },
+      prologue_neutral: {
+        bg: ASSETS.bg.hall,
+        speaker: "Коля",
+        text: "Ага, третья пара подряд... Я Коля, кстати. Будем знакомы!",
+        charLeft: null,
+        charRight: ASSETS.kolya.idle,
+        next: "act1_start"
+      },
+
+      act1_start: {
+        bg: ASSETS.bg.buffet,
+        speaker: "Мысли",
+        text: "Большая перемена. В буфете столпотворение. У кассы я замечаю Колю... и парня с невероятно пышной причёской.",
+        charLeft: null,
+        charRight: ASSETS.kolya.idle,
+        next: "act1_timofey_1"
+      },
+      act1_timofey_1: {
+        bg: ASSETS.bg.buffet,
+        speaker: "Тимофей",
+        text: "Колянчик, солнце моё! Закрой чек на кассе за нас двоих, а? Чистая голда вернётся вдвойне, у меня крипта на перезагрузке!",
+        charLeft: ASSETS.timofey.flirt,
+        charRight: ASSETS.kolya.sad,
+        next: "act1_choice"
+      },
+      act1_choice: {
+        bg: ASSETS.bg.buffet,
+        speaker: "Мысли",
+        text: "Коля смущённо полез за кошельком, хотя явно не планировал оплачивать чужой дорогой кофе.",
+        charLeft: ASSETS.timofey.smug,
+        charRight: ASSETS.kolya.sad,
+        choices: [
+          {
+            text: "«За Колю плачу я, а крипто-магнат пусть платит сам»",
+            score: 2,
+            next: "act1_win"
+          },
+          {
+            text: "«Тимофей, ты опять стреляешь мелочь у первокурсников?»",
+            score: 1,
+            next: "act1_troll"
+          }
+        ]
+      },
+      act1_win: {
+        bg: ASSETS.bg.buffet,
+        speaker: "Тимофей",
+        text: "Э-э... Ты кто вообще такой?! Кассир, отмените мой круассан!",
+        charLeft: ASSETS.timofey.panic,
+        charRight: ASSETS.kolya.blush,
+        next: "act1_after"
+      },
+      act1_troll: {
+        bg: ASSETS.bg.buffet,
+        speaker: "Тимофей",
+        text: "Цыц! Ничего ты не понимаешь в инвестициях! Я пошёл...",
+        charLeft: ASSETS.timofey.angry,
+        charRight: ASSETS.kolya.idle,
+        next: "act1_after"
+      },
+      act1_after: {
+        bg: ASSETS.bg.buffet,
+        speaker: "Коля",
+        text: "Спасибо тебе... Тимофей постоянно просит закрыть его счета, а мне как-то неловко отказать...",
+        charLeft: null,
+        charRight: ASSETS.kolya.idle,
+        next: "act2_start"
+      },
+
+      act2_start: {
+        bg: ASSETS.bg.lab,
+        speaker: "Мысли",
+        text: "После обеда я заглянул в лабораторный корпус. В пустом коридоре у стендов стоял Коля, а перед ним — кудрявый парень в очках.",
+        charLeft: null,
+        charRight: ASSETS.kolya.sad,
+        next: "act2_ponchik_1"
+      },
+      act2_ponchik_1: {
+        bg: ASSETS.bg.lab,
+        speaker: "Пончик",
+        text: "Коленька, я встал в 5 утра! Руки в муке, сам пёк эти кексы... А ты говоришь «не голоден»? Ты совсем меня не ценишь!",
+        charLeft: ASSETS.ponchik.guilt,
+        charRight: ASSETS.kolya.sad,
+        next: "act2_choice"
+      },
+      act2_choice: {
+        bg: ASSETS.bg.lab,
+        speaker: "Мысли",
+        text: "Пончик буквально силой сует коробку в руки Коле, давя на чувство вины.",
+        charLeft: ASSETS.ponchik.sweet,
+        charRight: ASSETS.kolya.sad,
+        choices: [
+          {
+            text: "«Забота — это когда слышат чужое нет, а не навязывают долги»",
+            score: 2,
+            next: "act2_win"
+          },
+          {
+            text: "«О, выпечка! Коле нельзя сладкое, давай сюда, съем за него»",
+            score: 1,
+            next: "act2_eat"
+          }
+        ]
+      },
+      act2_win: {
+        bg: ASSETS.bg.lab,
+        speaker: "Пончик",
+        text: "Что?! Да как ты смеешь влезать в нашу дружбу?! Коля, скажи ему!",
+        charLeft: ASSETS.ponchik.shock,
+        charRight: ASSETS.kolya.idle,
+        next: "act2_kolya_defend"
+      },
+      act2_eat: {
+        bg: ASSETS.bg.lab,
+        speaker: "Пончик",
+        text: "Эй! Это было ДЛЯ КОЛИ! Ты наглый хам!",
+        charLeft: ASSETS.ponchik.angry,
+        charRight: ASSETS.kolya.shock,
+        next: "act2_kolya_defend"
+      },
+      act2_kolya_defend: {
+        bg: ASSETS.bg.lab,
+        speaker: "Коля",
+        text: "Пончик, перестань... Он прав. Пожалуйста, не нужно готовить для меня через силу.",
+        charLeft: ASSETS.ponchik.angry,
+        charRight: ASSETS.kolya.idle,
+        next: "act2_after"
+      },
+      act2_after: {
+        bg: ASSETS.bg.lab,
+        speaker: "Коля",
+        text: "Фух... Никто раньше не осмеливался ответить Пончику. Вечно все боялись его обидеть. Ты невероятный!",
+        charLeft: null,
+        charRight: ASSETS.kolya.blush,
+        next: "act3_start"
+      },
+
+      act3_start: {
+        bg: ASSETS.bg.yard,
+        speaker: "Мысли",
+        text: "Занятия закончились. На заднем дворе за гаражами я увидел темную фигуру, преградившую путь Коле.",
+        charLeft: null,
+        charRight: ASSETS.kolya.shock,
+        next: "act3_andrey_1"
+      },
+      act3_andrey_1: {
+        bg: ASSETS.bg.yard,
+        speaker: "Андрей",
+        text: "Куда намылился, ботаник? Садись в тачку. Поедешь ко мне делать отчёт. И без фокусов, ты знаешь, кто здесь главный.",
+        charLeft: ASSETS.andrey.smirk,
+        charRight: ASSETS.kolya.sad,
+        next: "act3_choice"
+      },
+      act3_choice: {
+        bg: ASSETS.bg.yard,
+        speaker: "Мысли",
+        text: "Андрей крепко держит Колю за лямку рюкзака. Коля боится дать отпор.",
+        charLeft: ASSETS.andrey.smirk,
+        charRight: ASSETS.kolya.sad,
+        choices: [
+          {
+            text: "«Руки убери. Коля сам решает, с кем и куда ему идти»",
+            score: 2,
+            next: "act3_brawl"
+          },
+          {
+            text: "«Коль, скажи ему прямо в лицо — ты хочешь с ним ехать?»",
+            score: 1,
+            next: "act3_voice"
+          }
+        ]
+      },
+      act3_brawl: {
+        bg: ASSETS.bg.yard,
+        speaker: "Андрей",
+        text: "Ты вообще берега попутал?! Знаешь, чья это машина и кто мой отец?!",
+        charLeft: ASSETS.andrey.angry,
+        charRight: ASSETS.kolya.shock,
+        next: "act3_kolya_courage"
+      },
+      act3_voice: {
+        bg: ASSETS.bg.yard,
+        speaker: "Андрей",
+        text: "Да он и слова пикнуть не посмеет против меня!",
+        charLeft: ASSETS.andrey.smirk,
+        charRight: ASSETS.kolya.sad,
+        next: "act3_kolya_courage"
+      },
+      act3_kolya_courage: {
+        bg: ASSETS.bg.yard,
+        speaker: "Коля",
+        text: "Андрей... Отпусти меня. Я не поеду с тобой. Ни сегодня, ни когда-либо ещё!",
+        charLeft: ASSETS.andrey.shock,
+        charRight: ASSETS.kolya.idle,
+        next: "act3_defeat"
+      },
+      act3_defeat: {
+        bg: ASSETS.bg.yard,
+        speaker: "Андрей",
+        text: "Тц... Да пошли вы оба! Пожалеете ещё!",
+        charLeft: ASSETS.andrey.defeat,
+        charRight: ASSETS.kolya.idle,
+        next: "epilogue_start"
+      },
+
+      epilogue_start: {
+        bg: ASSETS.bg.busStop,
+        speaker: "Мысли",
+        text: "Вечерний город зажёг огни. Мы вдвоём сидим на скамейке тихой автобусной остановки.",
+        charLeft: null,
+        charRight: ASSETS.kolya.idle,
+        next: "epilogue_calc"
+      },
+      epilogue_calc: {
+        bg: ASSETS.bg.busStop,
+        speaker: "Коля",
+        text: "",
+        charLeft: null,
+        charRight: ASSETS.kolya.blush,
+        isEnding: true
+      }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const nameScreen = document.getElementById("name-screen");
+      const startBtn = document.getElementById("start-btn");
+      const nameInput = document.getElementById("player-name-input");
+      const hud = document.getElementById("hud");
+      const dialogueBox = document.getElementById("dialogue-box");
+
+      startBtn.addEventListener("click", () => {
+        const val = nameInput.value.trim();
+        if (val.length > 0) playerName = val;
+        nameScreen.classList.add("hidden");
+        hud.classList.remove("hidden");
+        dialogueBox.classList.remove("hidden");
+        loadScene(currentSceneKey);
+      });
+
+      dialogueBox.addEventListener("click", (e) => {
+        if (e.target.classList.contains("choice-btn")) return;
+        const scene = story[currentSceneKey];
+        if (scene && scene.next && !scene.choices) {
+          currentSceneKey = scene.next;
+          loadScene(currentSceneKey);
+        }
+      });
+    });
+
+    function loadScene(key) {
+      currentSceneKey = key;
+      const scene = story[key];
+      if (!scene) return;
+
+      const bgEl = document.getElementById("background");
+      if (scene.bg) {
+        bgEl.style.backgroundImage = `url('${scene.bg}')`;
+      }
+
+      const leftChar = document.getElementById("char-left");
+      const rightChar = document.getElementById("char-right");
+      updateSprite(leftChar, scene.charLeft);
+      updateSprite(rightChar, scene.charRight);
+
+      const speakerEl = document.getElementById("speaker-name");
+      const textEl = document.getElementById("dialogue-text");
+      const choicesBox = document.getElementById("choices-container");
+      const nextIndicator = document.getElementById("next-indicator");
+
+      speakerEl.textContent = scene.speaker;
+
+      if (scene.isEnding) {
+        renderEnding(textEl, rightChar);
+        nextIndicator.textContent = "— Конец истории —";
+        return;
+      }
+
+      textEl.textContent = scene.text;
+
+      if (scene.choices) {
+        choicesBox.innerHTML = "";
+        choicesBox.classList.remove("hidden");
+        nextIndicator.classList.add("hidden");
+
+        scene.choices.forEach(ch => {
+          const btn = document.createElement("button");
+          btn.className = "choice-btn";
+          btn.textContent = ch.text;
+          btn.onclick = () => {
+            kolyaLove += ch.score;
+            document.getElementById("heart-count").textContent = `❤️ ${kolyaLove}`;
+            choicesBox.classList.add("hidden");
+            nextIndicator.classList.remove("hidden");
+            loadScene(ch.next);
+          };
+          choicesBox.appendChild(btn);
+        });
+      } else {
+        choicesBox.classList.add("hidden");
+        nextIndicator.classList.remove("hidden");
+      }
+    }
+
+    function updateSprite(imgEl, src) {
+      if (src) {
+        imgEl.src = src;
+        imgEl.classList.remove("hidden");
+      } else {
+        imgEl.classList.add("hidden");
+      }
+    }
+
+    function renderEnding(textEl, rightChar) {
+      if (kolyaLove >= 5) {
+        rightChar.src = ASSETS.kolya.blush;
+        textEl.textContent = `${playerName}... Знаешь, они все видели во мне либо кошелёк, либо проект, либо слабость. Ты единственный, кто защитил меня и спросил, чего хочу я сам... Можно я сегодня просто побуду рядом с тобой?`;
+      } else if (kolyaLove >= 3) {
+        rightChar.src = ASSETS.kolya.idle;
+        textEl.textContent = `Спасибо тебе большое, ${playerName}. Ты помог мне понять, что нельзя позволять помыкать собой. Надеюсь, завтра увидимся на парах!`;
+      } else {
+        rightChar.src = ASSETS.kolya.sad;
+        textEl.textContent = `День был слишком сумасшедшим... Спасибо за помощь, но мне сейчас нужно побыть одному и всё обдумать. Пока, ${playerName}.`;
+      }
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  </script>
+</body>
+</html>
